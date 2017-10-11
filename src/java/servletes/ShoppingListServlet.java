@@ -2,6 +2,8 @@ package servletes;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import static java.util.Collections.list;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -16,6 +18,7 @@ public class ShoppingListServlet extends HttpServlet
             throws ServletException, IOException 
     {
         String action = request.getParameter("action");
+        ArrayList<String> listItems;
         HttpSession session = request.getSession();  
         String username = (String) session.getAttribute("username");
         
@@ -28,18 +31,32 @@ public class ShoppingListServlet extends HttpServlet
             }
             else
             {
+                listItems = (ArrayList<String>) session.getAttribute("listItems");  
+                
+                if(listItems != null)
+                {
+                    int listSize = listItems.size();
+                    request.setAttribute("listSize", listSize);
+                    
+                    request.setAttribute("listItems", listItems);
+                    session.setAttribute("listItems", listItems);
+                }
+                else
+                {
+                    request.setAttribute("listsize", 0);
+                }
                 getServletContext().getRequestDispatcher("/WEB-INF/shoppingList.jsp").forward(request, response);
-                //TODO check session to see if there a itemlist , if yes display
             }
         }
+        
         if(action.equals("logout"))
         {          
-            session.removeAttribute("user");
+            session.removeAttribute("username");
+            session.removeAttribute("listItems");
             request.setAttribute("message", "You have successfuly logged out.");
             getServletContext().getRequestDispatcher("/WEB-INF/register.jsp").forward(request, response);
             return;
-        } 
-           
+        }           
         getServletContext().getRequestDispatcher("/WEB-INF/register.jsp").forward(request, response);
     }
 
@@ -49,19 +66,41 @@ public class ShoppingListServlet extends HttpServlet
     {
         String action = request.getParameter("action");
         HttpSession session = request.getSession();
-        
-        //User user = (User) session.getAttribute("user");  
-        //session.setAttribute("user", user); 
-        
-        
+        //Array List for the items created 
+        ArrayList<String> listItems = (ArrayList<String>) session.getAttribute("listItems");  
+        //check if the item list is empty
+        if(listItems == null)
+        {
+            listItems = new ArrayList<String>();
+        }
         
         if (action.equals("register"))
         {   
             String username = request.getParameter("username");
-            session.setAttribute("username", username); 
+            session.setAttribute("username", username);
             //TODO get username, redirect to home
-            response.sendRedirect("home");
-            //getServletContext().getRequestDispatcher("/WEB-INF/shoppingList.jsp").forward(request, response);            
+            response.sendRedirect("home");           
+        }
+        if(action.equals("add"))
+        {
+           // String username = (String) session.getAttribute("username");
+            String item = request.getParameter("item");
+            //add the items
+            listItems.add(item);
+            // set the session 
+            session.setAttribute("listItems", listItems); 
+            response.sendRedirect("home");  
+            return;
+        }
+        if(action.equals("delete"))
+        {     
+            //get the item to be deleted
+            String deleteItem = request.getParameter("deleteItem");
+            //index of the item is coming from the delete item parameter
+            int itemIndex = Integer.parseInt(deleteItem);
+            //remove the item from the list
+            listItems.remove(itemIndex);
+            response.sendRedirect("home"); 
         }
     }
 
